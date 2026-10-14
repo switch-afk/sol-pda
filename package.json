@@ -1,0 +1,37 @@
+{
+  "name": "sol-pda",
+  "version": "0.0.1",
+  "description": "Derive Solana program derived addresses (PDAs) offline from your terminal",
+  "bin": {
+    "sol-pda": "bin/sol-pda.js"
+  },
+  "main": "src/cli.js",
+  "files": [
+    "bin",
+    "src",
+    "CHANGELOG.md"
+  ],
+  "scripts": {
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "solana",
+    "pda",
+    "program-derived-address",
+    "cli",
+    "zero-dependency"
+  ],
+  "author": "Blue Brick",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/switch-afk/sol-pda.git"
+  },
+  "bugs": {
+    "url": "https://github.com/switch-afk/sol-pda/issues"
+  },
+  "homepage": "https://github.com/switch-afk/sol-pda#readme"
+}
