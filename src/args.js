@@ -7,6 +7,7 @@ const MAX_SEEDS = 15;
 
 const VALUE_OPTIONS = {
   '--seed': { key: 'seed', needs: 'a type:value pair' },
+  '--verify': { key: 'verify', needs: 'an address' },
 };
 
 const FLAG_OPTIONS = {
@@ -24,6 +25,7 @@ function parseArgs(argv) {
   const opts = {
     program: null,
     seeds: [],
+    verify: null,
     json: false,
     help: false,
     version: false,
@@ -50,7 +52,7 @@ function parseArgs(argv) {
       if (inline !== null) throw new UsageError(`${name} does not take a value`);
       opts[FLAG_OPTIONS[name]] = true;
     } else if (VALUE_OPTIONS[name]) {
-      const { needs } = VALUE_OPTIONS[name];
+      const { key, needs } = VALUE_OPTIONS[name];
       let value = inline;
       if (value === null) {
         value = argv[++i];
@@ -62,7 +64,12 @@ function parseArgs(argv) {
         throw new UsageError(`${name} needs ${needs}`);
       }
 
-      opts.seeds.push(value);
+      if (key === 'seed') {
+        opts.seeds.push(value);
+      } else {
+        if (opts[key] !== null) throw new UsageError(`${name} can only be given once`);
+        opts[key] = value;
+      }
     } else if (arg.startsWith('-')) {
       throw new UsageError(`Unknown option: ${name}`);
     } else if (opts.program === null) {
@@ -78,6 +85,9 @@ function parseArgs(argv) {
     }
     if (!isValidAddress(opts.program)) {
       throw new UsageError('Not a valid Solana address');
+    }
+    if (opts.verify !== null && !isValidAddress(opts.verify)) {
+      throw new UsageError('--verify is not a valid Solana address');
     }
     if (opts.seeds.length > MAX_SEEDS) {
       throw new UsageError(`At most ${MAX_SEEDS} seeds are allowed`);
