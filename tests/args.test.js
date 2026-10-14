@@ -36,7 +36,7 @@ test('more than the maximum number of seeds is a usage error', () => {
   const ok = [];
   for (let i = 0; i < MAX_SEEDS; i++) ok.push('--seed', `u8:${i}`);
   assert.equal(parseArgs([PROGRAM, ...ok]).seeds.length, MAX_SEEDS);
-  assert.throws(() => parseArgs([PROGRAM, ...ok, '--seed', 'u8:99']), /At most 16 seeds/);
+  assert.throws(() => parseArgs([PROGRAM, ...ok, '--seed', 'u8:99']), /At most 15 seeds/);
 });
 
 test('--help and --version work without an address', () => {
