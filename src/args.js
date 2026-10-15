@@ -2,8 +2,8 @@
 
 const { isValidAddress } = require('./address');
 
-// Solana allows at most 16 seeds per derivation (the bump is added on top).
-const MAX_SEEDS = 16;
+// find_program_address appends the bump as a seed, and Solana allows 16 in total.
+const MAX_SEEDS = 15;
 
 const VALUE_OPTIONS = {
   '--seed': { key: 'seed', needs: 'a type:value pair' },
