@@ -1,6 +1,6 @@
 {
   "name": "sol-pda",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Derive Solana program derived addresses (PDAs) offline from your terminal",
   "bin": {
     "sol-pda": "bin/sol-pda.js"
