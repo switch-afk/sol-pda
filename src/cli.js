@@ -4,6 +4,7 @@ const { parseArgs, UsageError } = require('./args');
 const { decodeBase58, encodeBase58 } = require('./address');
 const { parseSeed } = require('./seeds');
 const { findProgramAddress } = require('./pda');
+const { verifyAddress } = require('./verify');
 const { formatHuman, formatJson } = require('./format');
 const { version } = require('../package.json');
 
@@ -17,6 +18,8 @@ Usage:
 
 Options:
   --seed <type:value>  Add a seed (repeat for several, in order, max 15)
+  --verify <address>   Check an address against the derivation (exit 1 unless it is
+                       the canonical PDA)
   --json               Print machine-readable JSON
   -h, --help           Show this help
   -v, --version        Show the version
@@ -59,12 +62,12 @@ async function run(argv, io = {}) {
     return 0;
   }
 
+  const seedBytes = seeds.map((seed) => seed.bytes);
+  const programBytes = decodeBase58(opts.program);
+
   let found;
   try {
-    found = findProgramAddress(
-      seeds.map((seed) => seed.bytes),
-      decodeBase58(opts.program)
-    );
+    found = findProgramAddress(seedBytes, programBytes);
   } catch (err) {
     stderr.write(`Error: ${err.message}\n`);
     return 1;
@@ -76,8 +79,16 @@ async function run(argv, io = {}) {
     address: encodeBase58(found.address),
     bump: found.bump,
   };
+
+  let code = 0;
+  if (opts.verify !== null) {
+    const check = verifyAddress(seedBytes, programBytes, decodeBase58(opts.verify), found);
+    result.verify = { address: opts.verify, ...check };
+    if (check.result !== 'match') code = 1;
+  }
+
   stdout.write(opts.json ? formatJson(result) : formatHuman(result));
-  return 0;
+  return code;
 }
 
 module.exports = { run, HELP };
