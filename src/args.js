@@ -8,9 +8,11 @@ const MAX_SEEDS = 15;
 const VALUE_OPTIONS = {
   '--seed': { key: 'seed', needs: 'a type:value pair' },
   '--verify': { key: 'verify', needs: 'an address' },
+  '--rpc': { key: 'rpc', needs: 'a URL' },
 };
 
 const FLAG_OPTIONS = {
+  '--check': 'check',
   '--json': 'json',
 };
 
@@ -21,11 +23,26 @@ class UsageError extends Error {
   }
 }
 
+function checkRpcUrl(value) {
+  let url;
+  try {
+    url = new URL(value);
+  } catch {
+    throw new UsageError('--rpc must be a valid http(s) URL');
+  }
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+    throw new UsageError('--rpc must be a valid http(s) URL');
+  }
+  return value;
+}
+
 function parseArgs(argv) {
   const opts = {
     program: null,
     seeds: [],
     verify: null,
+    rpc: null,
+    check: false,
     json: false,
     help: false,
     version: false,
@@ -68,7 +85,7 @@ function parseArgs(argv) {
         opts.seeds.push(value);
       } else {
         if (opts[key] !== null) throw new UsageError(`${name} can only be given once`);
-        opts[key] = value;
+        opts[key] = key === 'rpc' ? checkRpcUrl(value) : value;
       }
     } else if (arg.startsWith('-')) {
       throw new UsageError(`Unknown option: ${name}`);
@@ -88,6 +105,9 @@ function parseArgs(argv) {
     }
     if (opts.verify !== null && !isValidAddress(opts.verify)) {
       throw new UsageError('--verify is not a valid Solana address');
+    }
+    if (opts.rpc !== null && !opts.check) {
+      throw new UsageError('--rpc only applies together with --check');
     }
     if (opts.seeds.length > MAX_SEEDS) {
       throw new UsageError(`At most ${MAX_SEEDS} seeds are allowed`);

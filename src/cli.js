@@ -5,6 +5,8 @@ const { decodeBase58, encodeBase58 } = require('./address');
 const { parseSeed } = require('./seeds');
 const { findProgramAddress } = require('./pda');
 const { verifyAddress } = require('./verify');
+const { createRpcClient, resolveRpcUrl, RpcError } = require('./rpc');
+const { fetchAccount } = require('./account');
 const { formatHuman, formatJson } = require('./format');
 const { version } = require('../package.json');
 
@@ -20,6 +22,8 @@ Options:
   --seed <type:value>  Add a seed (repeat for several, in order, max 15)
   --verify <address>   Check an address against the derivation (exit 1 unless it is
                        the canonical PDA)
+  --check              Look the derived address up on-chain (exit 1 if it does not exist)
+  --rpc <url>          RPC endpoint for --check (or set SOL_PDA_RPC)
   --json               Print machine-readable JSON
   -h, --help           Show this help
   -v, --version        Show the version
@@ -30,13 +34,15 @@ Seed types (each seed is at most 32 bytes):
   hex:<digits>         Raw bytes, e.g. hex:ff00 (0x prefix allowed)
   u8|u16|u32|u64:<n>   Whole number, little-endian, e.g. u64:1
 
-Example:
+Examples:
   sol-pda TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA --seed string:vault --seed u8:1
+  sol-pda <program> --seed string:vault --check --rpc https://api.devnet.solana.com
 `;
 
 async function run(argv, io = {}) {
   const stdout = io.stdout || process.stdout;
   const stderr = io.stderr || process.stderr;
+  const env = io.env || process.env;
 
   let opts;
   let seeds = [];
@@ -85,6 +91,23 @@ async function run(argv, io = {}) {
     const check = verifyAddress(seedBytes, programBytes, decodeBase58(opts.verify), found);
     result.verify = { address: opts.verify, ...check };
     if (check.result !== 'match') code = 1;
+  }
+
+  if (opts.check) {
+    const client = createRpcClient({
+      url: resolveRpcUrl(opts.rpc, env),
+      fetch: io.fetch,
+      sleep: io.sleep,
+    });
+    try {
+      result.account = { host: client.host, ...(await fetchAccount(client, result.address)) };
+      if (result.account.status !== 'found') code = 1;
+    } catch (err) {
+      if (!(err instanceof RpcError)) throw err;
+      result.account = { status: 'error', host: client.host, error: err.message };
+      stderr.write(`Error: ${err.message}\n`);
+      code = 1;
+    }
   }
 
   stdout.write(opts.json ? formatJson(result) : formatHuman(result));
